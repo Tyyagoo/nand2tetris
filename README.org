@@ -383,7 +383,9 @@ CHIP FullAdder {
 }
 #+end_src
 
-**** Adder
+**** TODO Adder
+
+[ ] - Take a look at carry look-ahead techniques to improve this chip.
 
 #+begin_src hdl :tangle projects/02/Add16.hdl
 CHIP Add16 {
