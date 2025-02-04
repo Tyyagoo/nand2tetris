@@ -22,7 +22,7 @@ The use of Boolean algebra for analyzing the abstract behavior of logic gates wa
 | Not      | $\overline{x}$ | $\neg x$     |
 
 **** Not
-If (in) out = 0, else out = 1
+If (in) then out = 0, else out = 1
 
 $f(x) = \neg x$
 
@@ -37,7 +37,7 @@ CHIP Not {
 #+end_src
 
 **** And
-if (a and b) out = 1, else out = 0
+if (a and b) then out = 1, else out = 0
 
 $f(x, y) = x \wedge y$
 
@@ -53,7 +53,7 @@ CHIP And {
 #+end_src
 
 **** Or
-if (a or b) out = 1, else out = 0
+if (a or b) then out = 1, else out = 0
 
 $f(x, y) = x \vee y$
 
@@ -70,7 +70,7 @@ CHIP Or {
 #+end_src
 
 **** Xor
-if ((a and Not(b) or (Not(a) and b)) out = 1, else out = 0
+if ((a and Not(b) or (Not(a) and b)) then out = 1, else out = 0
 
 $f(x, y) = (a \wedge \neg b) \vee (\neg a \wedge b)$
 
@@ -117,6 +117,48 @@ CHIP Xor {
     Nand(a=a, b=nb, out=fst);
     Nand(b=b, a=na, out=snd);
     Nand(a=fst, b=snd, out=out);
+}
+#+end_src
+
+**** Mux
+A multiplexer forwards a *given input* based on a selection criteria. N:1
+
+if sel == 0 then out = a, else out = b
+
+The logic is dead simple, short-circuit the unwanted value with SEL.
+
+$f(x, y, s) = (x \wedge \neg s) \vee (y \wedge s)$
+
+#+begin_src hdl :tangle projects/01/Mux.hdl
+CHIP Mux {
+    IN a, b, sel;
+    OUT out;
+
+    PARTS:
+    Not(in=sel, out=nsel);
+    Nand(a=a, b=nsel, out=x);
+    Nand(a=b, b=sel, out=y);
+    Nand(a=x, b=y, out=out);
+}
+#+end_src
+
+**** Demux
+A demultiplexer is the opposite. It forwards to a *given output* based on a selection criteria. 1:N
+
+if sel == 0 then out = a, else out = b
+
+$a(x, s) = x \wedge \neg s$
+$b(x, s) = x \wedge s$
+
+#+begin_src hdl :tangle projects/01/DMux.hdl
+CHIP DMux {
+    IN in, sel;
+    OUT a, b;
+
+    PARTS:
+    Not(in=sel, out=nsel);
+    And(a=in, b=sel, out=b);
+    And(a=in, b=nsel, out=a);
 }
 #+end_src
 
