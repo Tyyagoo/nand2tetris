@@ -1,3 +1,6 @@
+#+STARTUP: latexpreview
+#+OPTIONS: tex:t
+
 * Building a Modern Computer from First Principles
 
 #+BEGIN_QUOTE
@@ -12,17 +15,26 @@ The cognitive ability to “divide and conquer” a complex system into manageab
 The use of Boolean algebra for analyzing the abstract behavior of logic gates was articulated in 1937 by Claude Shannon, leading to what is sometimes described as the most important M.Sc. thesis in computer science. (p. 38)
 #+END_QUOTE
 
-| Operator | Math         | Formal     |
-|----------+--------------+------------|
-| And      | x \cdot y    | x \wedge y |
-| Or       | x + y        | x \vee y   |
-| Not      | \overline{x} | \neg x     |
+| Operator | Math           | Formal       |
+|----------+----------------+--------------|
+| And      | $x \cdot y$    | $x \wedge y$ |
+| Or       | $x + y$        | $x \vee y$   |
+| Not      | $\overline{x}$ | $\neg x$     |
 
 **** Not
 If (in) out = 0, else out = 1
-\neg in
-***** Source :tangle projects/01/Not.hdl:
 
+$f(x) = \neg x$
+
+#+BEGIN_SRC hdl :tangle projects/01/Not.hdl
+CHIP Not {
+    IN in;
+    OUT out;
+
+    PARTS:
+    Nand(a=in, b=in, out=out);
+}
+#+END_SRC
 
 **** Everything from NAND
 Read appendix 1.
