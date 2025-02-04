@@ -4,11 +4,11 @@ The cognitive ability to “divide and conquer” a complex system into manageab
 #+END_QUOTE
 ** Hardware
 *** Boolean Logic
-| Operator | Math         | Formal      |
-|----------+--------------+-------------|
-| And      | x \dot y     | x \wedge y  |
-| Or       | x + y        | x \vee y    |
-| Not      | \overline{x} | \textlnot x |
+| Operator | Math         | Formal     |
+|----------+--------------+------------|
+| And      | x \cdot y    | x \wedge y |
+| Or       | x + y        | x \vee y   |
+| Not      | \overline{~} | \neg x     |
 
 **** Everything from NAND
 **** Table2Expr
