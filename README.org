@@ -26,7 +26,7 @@ If (in) out = 0, else out = 1
 
 $f(x) = \neg x$
 
-#+BEGIN_SRC hdl :tangle projects/01/Not.hdl
+#+begin_src hdl :tangle projects/01/Not.hdl
 CHIP Not {
     IN in;
     OUT out;
@@ -34,7 +34,92 @@ CHIP Not {
     PARTS:
     Nand(a=in, b=in, out=out);
 }
-#+END_SRC
+#+end_src
+
+**** And
+if (a and b) out = 1, else out = 0
+
+$f(x, y) = x \wedge y$
+
+#+begin_src hdl :tangle projects/01/And.hdl
+CHIP And {
+    IN a, b;
+    OUT out;
+
+    PARTS:
+    Nand(a=a, b=b, out=neg);
+    Not(in=neg, out=out);
+}
+#+end_src
+
+**** Or
+if (a or b) out = 1, else out = 0
+
+$f(x, y) = x \vee y$
+
+#+begin_src hdl :tangle projects/01/Or.hdl
+CHIP Or {
+    IN a, b;
+    OUT out;
+
+    PARTS:
+    Not(in=a, out=na);
+    Not(in=b, out=nb);
+    Nand(a=na, b=nb, out=out);
+}
+#+end_src
+
+**** Xor
+if ((a and Not(b) or (Not(a) and b)) out = 1, else out = 0
+
+$f(x, y) = (a \wedge \neg b) \vee (\neg a \wedge b)$
+
+The naive implementation is straightforward:
+
+#+begin_src hdl :tangle projects/01/BadXor.hdl
+CHIP BadXor {
+    IN a, b;
+    OUT out;
+
+    PARTS:
+    Not(in=a, out=na);
+    Not(in=b, out=nb);
+    And(a=a, b=nb, out=fst);
+    And(b=b, a=na, out=snd);
+    Or(a=fst, b=snd, out=out);
+}
+#+end_src
+
+Since we're using NAND as our basic building block here, AND/OR become expensive gates, costing 2 and 3 NAND, respectively. So this implementation uses 9 NAND. We can do better by applying De Morgan's Law, which defines the following tranformation rules:
+
+$\neg (x \wedge y) \vdash (\neg x \vee \neg y)$
+
+$\neg (x \vee y) \vdash (\neg x \wedge \neg y)$
+
+So, our XOR function can be optimized to use only 5 NAND:
+
+$f(x, y) = (a \wedge \neg b) \vee (\neg a \wedge b)$
+
+$f(x, y) = \neg \neg ((a \wedge \neg b) \vee (\neg a \wedge b))$
+
+$f(x, y) = \neg (\neg (a \wedge \neg b) \wedge \neg (\neg a \wedge b))$
+
+That is: Nand(Nand(a, Not(b)), Nand(Not(a), b))
+
+#+begin_src hdl :tangle projects/01/Xor.hdl
+CHIP Xor {
+    IN a, b;
+    OUT out;
+
+    PARTS:
+    Not(in=a, out=na);
+    Not(in=b, out=nb);
+    Nand(a=a, b=nb, out=fst);
+    Nand(b=b, a=na, out=snd);
+    Nand(a=fst, b=snd, out=out);
+}
+#+end_src
+
 
 **** Everything from NAND
 Read appendix 1.
