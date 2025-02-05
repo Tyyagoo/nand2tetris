@@ -508,3 +508,217 @@ CHIP ALU {
     Not(in=nz, out=zr);
 }
 #+end_src
+
+*** Memory
+
+#+begin_quote
+When planning a computer, the hardware engineer chooses a cycle length that meets two design objectives. On the one hand, the cycle should be sufficiently long to contain, and neutralize, any possible time delay; on the other hand, the shorter the cycle, the faster the computer: if things happen only during cycle transitions, then obviously things happen faster when the cycles are shorter. To sum up, the cycle length is chosen to be slightly longer than the maximal time delay in any chip in the system. (p. 81)
+#+end_quote
+
+**** Bit
+
+#+begin_src hdl :tangle projects/03/a/Bit.hdl
+/**
+ * 1-bit register:
+ * If load is asserted, the register's value is set to in;
+ * Otherwise, the register maintains its current value:
+ * if (load(t)) out(t+1) = in(t), else out(t+1) = out(t)
+ */
+
+CHIP Bit {
+    IN in, load;
+    OUT out;
+
+    PARTS:
+    DFF(in=set, out=old, out=out);
+    Mux(a=old, b=in, sel=load, out=set);
+}
+#+end_src
+
+**** Register
+
+#+begin_src hdl :tangle projects/03/a/Register.hdl
+/**
+ * 16-bit register:
+ * If load is asserted, the register's value is set to in;
+ * Otherwise, the register maintains its current value:
+ * if (load(t)) out(t+1) = int(t), else out(t+1) = out(t)
+ */
+CHIP Register {
+    IN in[16], load;
+    OUT out[16];
+
+    PARTS:
+    Bit(in=in[0], load=load, out=out[0]);
+    Bit(in=in[1], load=load, out=out[1]);
+    Bit(in=in[2], load=load, out=out[2]);
+    Bit(in=in[3], load=load, out=out[3]);
+    Bit(in=in[4], load=load, out=out[4]);
+    Bit(in=in[5], load=load, out=out[5]);
+    Bit(in=in[6], load=load, out=out[6]);
+    Bit(in=in[7], load=load, out=out[7]);
+    Bit(in=in[8], load=load, out=out[8]);
+    Bit(in=in[9], load=load, out=out[9]);
+    Bit(in=in[10], load=load, out=out[10]);
+    Bit(in=in[11], load=load, out=out[11]);
+    Bit(in=in[12], load=load, out=out[12]);
+    Bit(in=in[13], load=load, out=out[13]);
+    Bit(in=in[14], load=load, out=out[14]);
+    Bit(in=in[15], load=load, out=out[15]);
+}
+#+end_src
+
+**** Program Counter
+
+#+begin_src hdl :tangle projects/03/a/PC.hdl
+/**
+ * A 16-bit counter.
+ * if      reset(t): out(t+1) = 0
+ * else if load(t):  out(t+1) = in(t)
+ * else if inc(t):   out(t+1) = out(t) + 1
+ * else              out(t+1) = out(t)
+ */
+CHIP PC {
+    IN in[16], reset, load, inc;
+    OUT out[16];
+    
+    PARTS:
+    Or(a=reset, b=load, out=c);
+    Or(a=c, b=inc, out=change);
+
+    Register(in=set, load=change, out=old, out=out);
+    Inc16(in=old, out=incr);
+
+    Mux16(a=old, b=incr, sel=inc, out=oi);
+    Mux16(a=oi, b=in, sel=load, out=oil);
+    Mux16(a=oil, b=false, sel=reset, out=set);
+}
+#+end_src
+
+**** Random-access memory
+
+#+begin_src hdl :tangle projects/03/a/RAM8.hdl
+/**
+ * Memory of eight 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM8 {
+    IN in[16], load, address[3];
+    OUT out[16];
+
+    PARTS:
+    Register(in=in, load=ai, out=ao);
+    Register(in=in, load=bi, out=bo);
+    Register(in=in, load=ci, out=co);
+    Register(in=in, load=di, out=do);
+    Register(in=in, load=ei, out=eo);
+    Register(in=in, load=fi, out=fo);
+    Register(in=in, load=gi, out=go);
+    Register(in=in, load=hi, out=ho);
+
+    DMux8Way(in=load, sel=address, a=ai, b=bi, c=ci, d=di, e=ei, f=fi, g=gi, h=hi);
+    Mux8Way16(a=ao, b=bo, c=co, d=do, e=eo, f=fo, g=go, h=ho, sel=address, out=out);
+}
+#+end_src
+
+#+begin_src hdl :tangle projects/03/a/RAM64.hdl
+/**
+ * Memory of sixty four 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM64 {
+    IN in[16], load, address[6];
+    OUT out[16];
+
+    PARTS:
+    RAM8(in=in, load=l1, address=address[0..2], out=r1);
+    RAM8(in=in, load=l2, address=address[0..2], out=r2);
+    RAM8(in=in, load=l3, address=address[0..2], out=r3);
+    RAM8(in=in, load=l4, address=address[0..2], out=r4);
+    RAM8(in=in, load=l5, address=address[0..2], out=r5);
+    RAM8(in=in, load=l6, address=address[0..2], out=r6);
+    RAM8(in=in, load=l7, address=address[0..2], out=r7);
+    RAM8(in=in, load=l8, address=address[0..2], out=r8);
+
+    DMux8Way(in=load, sel=address[3..5], a=l1, b=l2, c=l3, d=l4, e=l5, f=l6, g=l7, h=l8);
+    Mux8Way16(a=r1, b=r2, c=r3, d=r4, e=r5, f=r6, g=r7, h=r8, sel=address[3..5], out=out);
+}
+#+end_src
+
+#+begin_src hdl :tangle projects/03/b/RAM512.hdl
+/**
+ * Memory of 512 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM512 {
+    IN in[16], load, address[9];
+    OUT out[16];
+
+    PARTS:
+    RAM64(in=in, load=l1, address=address[0..5], out=r1);
+    RAM64(in=in, load=l2, address=address[0..5], out=r2);
+    RAM64(in=in, load=l3, address=address[0..5], out=r3);
+    RAM64(in=in, load=l4, address=address[0..5], out=r4);
+    RAM64(in=in, load=l5, address=address[0..5], out=r5);
+    RAM64(in=in, load=l6, address=address[0..5], out=r6);
+    RAM64(in=in, load=l7, address=address[0..5], out=r7);
+    RAM64(in=in, load=l8, address=address[0..5], out=r8);
+
+    DMux8Way(in=load, sel=address[6..8], a=l1, b=l2, c=l3, d=l4, e=l5, f=l6, g=l7, h=l8);
+    Mux8Way16(a=r1, b=r2, c=r3, d=r4, e=r5, f=r6, g=r7, h=r8, sel=address[6..8], out=out);
+}
+#+end_src
+
+#+begin_src hdl :tangle projects/03/b/RAM4K.hdl
+/**
+ * Memory of 4K 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM4K {
+    IN in[16], load, address[12];
+    OUT out[16];
+
+    PARTS:
+    RAM512(in=in, load=l1, address=address[0..8], out=r1);
+    RAM512(in=in, load=l2, address=address[0..8], out=r2);
+    RAM512(in=in, load=l3, address=address[0..8], out=r3);
+    RAM512(in=in, load=l4, address=address[0..8], out=r4);
+    RAM512(in=in, load=l5, address=address[0..8], out=r5);
+    RAM512(in=in, load=l6, address=address[0..8], out=r6);
+    RAM512(in=in, load=l7, address=address[0..8], out=r7);
+    RAM512(in=in, load=l8, address=address[0..8], out=r8);
+
+    DMux8Way(in=load, sel=address[9..11], a=l1, b=l2, c=l3, d=l4, e=l5, f=l6, g=l7, h=l8);
+    Mux8Way16(a=r1, b=r2, c=r3, d=r4, e=r5, f=r6, g=r7, h=r8, sel=address[9..11], out=out);
+}
+#+end_src
+
+#+begin_src hdl :tangle projects/03/b/RAM16K.hdl
+/**
+ * Memory of 16K 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM16K {
+    IN in[16], load, address[14];
+    OUT out[16];
+
+    PARTS:
+    RAM4K(in=in, load=l1, address=address[0..11], out=r1);
+    RAM4K(in=in, load=l2, address=address[0..11], out=r2);
+    RAM4K(in=in, load=l3, address=address[0..11], out=r3);
+    RAM4K(in=in, load=l4, address=address[0..11], out=r4);
+
+    DMux4Way(in=load, sel=address[12..13], a=l1, b=l2, c=l3, d=l4);
+    Mux4Way16(a=r1, b=r2, c=r3, d=r4, sel=address[12..13], out=out);
+}
+#+end_src
